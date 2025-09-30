@@ -218,7 +218,7 @@ class svgmap {
         // the link.
         $titlenode = $this->dom->getElementById('title' . $placeid);
         if ($titlenode) {
-            $titlenode->nodeValue = $text + $additionaltitle;
+            $titlenode->nodeValue = $text . $additionaltitle;
         }
         // Set the text element for the link and ensure it's positioned near the circle.
         $textnode = $this->dom->getElementById('text' . $placeid);

@@ -334,9 +334,11 @@ function learningmap_get_learningmap(cm_info $cm): string {
     );
 
     $placestore = json_decode($map->placestore, true);
-    // If auto mode is enabled, synthesize a placestore from course activities per current user.
+    // If auto mode is enabled, synthesize a placestore from course activities per current user
+    // and ensure we have a valid SVG skeleton to render into.
     if (!empty($map->automode)) {
         $placestore = learningmap_build_auto_placestore($cm);
+        $svg = $OUTPUT->render_from_template('mod_learningmap/svgskeleton', $placestore);
     }
 
     $group = (empty($cm->groupmode) ? 0 : groups_get_activity_group($cm, true));
