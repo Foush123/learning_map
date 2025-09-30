@@ -319,6 +319,8 @@ class svgmap {
         if (!empty($this->placestore['showtext'])) {
             $text = $this->dom->createElement('text');
             $text->setAttribute('id', 'text' . $placeid);
+            $text->setAttribute('x', (string)$x);
+            $text->setAttribute('y', (string)$y);
             $text->setAttribute('dx', '15');
             $text->setAttribute('dy', '-15');
             $text->setAttribute('class', 'learningmap-text');
