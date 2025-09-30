@@ -280,6 +280,53 @@ class svgmap {
     }
 
     /**
+     * Ensures a place (and its link, title, and optional text) exists in the SVG. Creates it if missing.
+     *
+     * @param string $placeid Id of the place circle
+     * @param int $x X coordinate (cx)
+     * @param int $y Y coordinate (cy)
+     * @param int $radius Circle radius
+     * @param string $linkid Id of the surrounding link element
+     * @return void
+     */
+    public function ensure_place_exists(string $placeid, int $x, int $y, int $radius, string $linkid): void {
+        $existing = $this->dom->getElementById($placeid);
+        if ($existing) {
+            return;
+        }
+        $placesgroup = $this->dom->getElementById('placesGroup');
+        if (!$placesgroup) {
+            return;
+        }
+        // Create link group.
+        $link = $this->dom->createElement('a');
+        $link->setAttribute('id', $linkid);
+        $link->setAttribute('xlink:href', '');
+        // Title for accessibility and tooltips.
+        $title = $this->dom->createElement('title');
+        $title->setAttribute('id', 'title' . $placeid);
+        $link->appendChild($title);
+        // The circle itself.
+        $circle = $this->dom->createElement('circle');
+        $circle->setAttribute('id', $placeid);
+        $circle->setAttribute('cx', (string)$x);
+        $circle->setAttribute('cy', (string)$y);
+        $circle->setAttribute('r', (string)$radius);
+        $circle->setAttribute('class', 'learningmap-place');
+        $link->appendChild($circle);
+        $placesgroup->appendChild($link);
+        // Optional text label.
+        if (!empty($this->placestore['showtext'])) {
+            $text = $this->dom->createElement('text');
+            $text->setAttribute('id', 'text' . $placeid);
+            $text->setAttribute('dx', '15');
+            $text->setAttribute('dy', '-15');
+            $text->setAttribute('class', 'learningmap-text');
+            $placesgroup->appendChild($text);
+        }
+    }
+
+    /**
      * Adds a checkmark to a place.
      *
      * @param string $placeid Id of a place

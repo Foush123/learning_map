@@ -152,6 +152,16 @@ class mapworker {
         // Walk through all places in the map.
         foreach ($this->placestore['places'] as $place) {
             $allplaces[] = $place['id'];
+            // In auto mode, ensure the SVG contains the place elements.
+            if (empty($this->placestore['editmode'])) {
+                $this->svgmap->ensure_place_exists(
+                    $place['id'],
+                    intval($place['x']),
+                    intval($place['y']),
+                    intval($place['radius'] ?? 10),
+                    $place['linkId'] ?? ('link' . $place['id'])
+                );
+            }
             // Remove places that are not linked to an activity or where the activity is missing.
             if (empty($place['linkedActivity']) || !in_array($place['linkedActivity'], $allcms)) {
                 $impossible[] = $place['id'];
