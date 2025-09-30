@@ -387,9 +387,17 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
     $padding = 40;
     srand((int)($cm->instance + $USER->id * 31));
 
+    // Build ordered list of course modules in course order (by section, then position).
+    $orderedcms = [];
+    foreach ($modinfo->get_sections() as $sectionnum => $sectioncmids) {
+        foreach ($sectioncmids as $scmid) {
+            $orderedcms[] = $modinfo->get_cm($scmid);
+        }
+    }
+
     // We want predictable course order for path chaining but random positions for nodes.
-    $cms = $modinfo->get_cms();
-    foreach ($cms as $cmid => $cmobj) {
+    foreach ($orderedcms as $cmobj) {
+        $cmid = $cmobj->id;
         if ($cmobj->deletioninprogress != 0) {
             continue;
         }
@@ -427,7 +435,7 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
     }
 
     // Connect nodes sequentially by course order.
-    $orderedplaceids = array_map(function($cmobj) { return 'auto_place_' . $cmobj->id; }, $cms);
+    $orderedplaceids = array_map(function($cmobj) { return 'auto_place_' . $cmobj->id; }, $orderedcms);
     $orderedplaceids = array_values(array_filter($orderedplaceids, function($pid) use ($places) {
         foreach ($places as $p) { if ($p['id'] === $pid) { return true; } }
         return false;
