@@ -218,11 +218,28 @@ class svgmap {
         // the link.
         $titlenode = $this->dom->getElementById('title' . $placeid);
         if ($titlenode) {
-            $titlenode->nodeValue = $text . $additionaltitle;
+            $titlenode->nodeValue = $text + $additionaltitle;
         }
-        // Set the text element for the link.
+        // Set the text element for the link and ensure it's positioned near the circle.
         $textnode = $this->dom->getElementById('text' . $placeid);
+        $circle = $this->dom->getElementById($placeid);
+        if (!$textnode && !empty($this->placestore['showtext'])) {
+            $placesgroup = $this->dom->getElementById('placesGroup');
+            if ($placesgroup) {
+                $textnode = $this->dom->createElement('text');
+                $textnode->setAttribute('id', 'text' . $placeid);
+                $textnode->setAttribute('dx', '15');
+                $textnode->setAttribute('dy', '-15');
+                $textnode->setAttribute('class', 'learningmap-text');
+                $textnode->setAttribute('visibility', 'visible');
+                $placesgroup->appendChild($textnode);
+            }
+        }
         if ($textnode) {
+            if ($circle) {
+                $textnode->setAttribute('x', $circle->getAttribute('cx'));
+                $textnode->setAttribute('y', $circle->getAttribute('cy'));
+            }
             $textnode->nodeValue = $text;
         }
     }
@@ -298,6 +315,17 @@ class svgmap {
         if (!$placesgroup) {
             return;
         }
+        // Clamp coordinates to background image bounds if available.
+        $bg = $this->dom->getElementById('learningmap-background-image');
+        if ($bg) {
+            $maxw = (int)$bg->getAttribute('width');
+            $maxh = (int)$bg->getAttribute('height');
+            if ($maxw > 0 && $maxh > 0) {
+                $padding = max(2, (int)ceil($radius * 1.5));
+                $x = max($padding, min($x, $maxw - $padding));
+                $y = max($padding, min($y, $maxh - $padding));
+            }
+        }
         // Create link group.
         $link = $this->dom->createElement('a');
         $link->setAttribute('id', $linkid);
@@ -319,9 +347,12 @@ class svgmap {
         if (!empty($this->placestore['showtext'])) {
             $text = $this->dom->createElement('text');
             $text->setAttribute('id', 'text' . $placeid);
+            $text->setAttribute('x', (string)$x);
+            $text->setAttribute('y', (string)$y);
             $text->setAttribute('dx', '15');
             $text->setAttribute('dy', '-15');
             $text->setAttribute('class', 'learningmap-text');
+            $text->setAttribute('visibility', 'visible');
             $placesgroup->appendChild($text);
         }
     }
