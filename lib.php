@@ -334,11 +334,9 @@ function learningmap_get_learningmap(cm_info $cm): string {
     );
 
     $placestore = json_decode($map->placestore, true);
-    // If auto mode is enabled, synthesize a placestore from course activities per current user
-    // and ensure we have a valid SVG skeleton to render into.
+    // If auto mode is enabled, synthesize a placestore from course activities per current user.
     if (!empty($map->automode)) {
         $placestore = learningmap_build_auto_placestore($cm);
-        $svg = $OUTPUT->render_from_template('mod_learningmap/svgskeleton', $placestore);
     }
 
     $group = (empty($cm->groupmode) ? 0 : groups_get_activity_group($cm, true));
@@ -389,7 +387,7 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
     $padding = 40;
     srand((int)($cm->instance + $USER->id * 31));
 
-    // Build ordered list of course modules in course order (by section, then position).
+    // Build ordered list of course modules in course order (by sections).
     $orderedcms = [];
     foreach ($modinfo->get_sections() as $sectionnum => $sectioncmids) {
         foreach ($sectioncmids as $scmid) {
@@ -397,22 +395,19 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
         }
     }
 
-    // We want predictable course order for path chaining but random positions for nodes.
+    // Create places with random positions but preserve activity order.
+    $orderedplaceids = [];
     foreach ($orderedcms as $cmobj) {
-        $cmid = $cmobj->id;
         if ($cmobj->deletioninprogress != 0) {
             continue;
         }
-        // Skip the learningmap instance itself and modules not displayable.
         if ($cmobj->id == $cm->id) {
             continue;
         }
         if ($CFG->branch >= 500 && !plugin_supports('mod', $cmobj->modname, FEATURE_CAN_DISPLAY, true)) {
             continue;
         }
-        // Basic visibility filter: include items available to the user or with a view page.
-        // We include hidden-but-available items too; final visibility handled in mapworker.
-
+        $cmid = $cmobj->id;
         $placeid = 'auto_place_' . $cmid;
         $linkid = 'auto_link_' . $cmid;
 
@@ -428,20 +423,15 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
             'linkedActivity' => $cmid,
             'linkId' => $linkid,
         ];
+        $orderedplaceids[] = $placeid;
 
         if ($index === 0) {
             $startingplaces[] = $placeid;
         }
-
         $index++;
     }
 
     // Connect nodes sequentially by course order.
-    $orderedplaceids = array_map(function($cmobj) { return 'auto_place_' . $cmobj->id; }, $orderedcms);
-    $orderedplaceids = array_values(array_filter($orderedplaceids, function($pid) use ($places) {
-        foreach ($places as $p) { if ($p['id'] === $pid) { return true; } }
-        return false;
-    }));
     for ($i = 0; $i < count($orderedplaceids) - 1; $i++) {
         $paths[] = [
             'id' => 'auto_path_' . $i,
