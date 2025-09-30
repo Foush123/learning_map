@@ -221,6 +221,10 @@ class mapworker {
             foreach ($this->placestore['paths'] as $path) {
                 // If the beginning or the ending of the path is a completed place and this place is available,
                 // show path and the place on the other end.
+                // Ensure path SVG exists for auto mode.
+                if (isset($path['id'], $path['sid'], $path['fid'])) {
+                    $this->svgmap->ensure_path_exists($path['id'], $path['sid'], $path['fid']);
+                }
                 if (in_array($path['sid'], $completedplaces) || in_array($path['fid'], $completedplaces)) {
                     // Only set paths visible if hidepaths is not set in placestore.
                     if (!$this->placestore['hidepaths']) {

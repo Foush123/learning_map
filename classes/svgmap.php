@@ -327,6 +327,36 @@ class svgmap {
     }
 
     /**
+     * Ensures a straight path exists between two places by creating a path element if missing.
+     *
+     * @param string $pathid Id of the path
+     * @param string $fromplaceid Id of the starting place
+     * @param string $toplaceid Id of the ending place
+     * @return void
+     */
+    public function ensure_path_exists(string $pathid, string $fromplaceid, string $toplaceid): void {
+        $existing = $this->dom->getElementById($pathid);
+        if ($existing) {
+            return;
+        }
+        $pathsGroup = $this->dom->getElementById('pathsGroup');
+        $from = $this->dom->getElementById($fromplaceid);
+        $to = $this->dom->getElementById($toplaceid);
+        if (!$pathsGroup || !$from || !$to) {
+            return;
+        }
+        $x1 = (int)$from->getAttribute('cx');
+        $y1 = (int)$from->getAttribute('cy');
+        $x2 = (int)$to->getAttribute('cx');
+        $y2 = (int)$to->getAttribute('cy');
+        $path = $this->dom->createElement('path');
+        $path->setAttribute('id', $pathid);
+        $path->setAttribute('d', 'M ' . $x1 . ' ' . $y1 . ' L ' . $x2 . ' ' . $y2);
+        $path->setAttribute('class', 'learningmap-path');
+        $pathsGroup->appendChild($path);
+    }
+
+    /**
      * Adds a checkmark to a place.
      *
      * @param string $placeid Id of a place

@@ -380,11 +380,16 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
     $startingplaces = [];
 
     $index = 0;
-    $y = 40;
-    $x = 60;
-    $yStep = 80;
+    // Randomized coordinates within canvas bounds.
+    $width = 800;
+    $height = 600;
+    $radius = 10;
+    $padding = 40;
+    srand((int)($cm->instance + $USER->id * 31));
 
-    foreach ($modinfo->get_cms() as $cmid => $cmobj) {
+    // We want predictable course order for path chaining but random positions for nodes.
+    $cms = $modinfo->get_cms();
+    foreach ($cms as $cmid => $cmobj) {
         if ($cmobj->deletioninprogress != 0) {
             continue;
         }
@@ -401,11 +406,15 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
         $placeid = 'auto_place_' . $cmid;
         $linkid = 'auto_link_' . $cmid;
 
+        // Random position.
+        $x = $padding + rand($radius, $width - $padding - $radius);
+        $y = $padding + rand($radius, $height - $padding - $radius);
+
         $places[] = [
             'id' => $placeid,
             'x' => $x,
-            'y' => $y + ($index * $yStep),
-            'radius' => 10,
+            'y' => $y,
+            'radius' => $radius,
             'linkedActivity' => $cmid,
             'linkId' => $linkid,
         ];
@@ -417,6 +426,20 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
         $index++;
     }
 
+    // Connect nodes sequentially by course order.
+    $orderedplaceids = array_map(function($cmobj) { return 'auto_place_' . $cmobj->id; }, $cms);
+    $orderedplaceids = array_values(array_filter($orderedplaceids, function($pid) use ($places) {
+        foreach ($places as $p) { if ($p['id'] === $pid) { return true; } }
+        return false;
+    }));
+    for ($i = 0; $i < count($orderedplaceids) - 1; $i++) {
+        $paths[] = [
+            'id' => 'auto_path_' . $i,
+            'sid' => $orderedplaceids[$i],
+            'fid' => $orderedplaceids[$i + 1],
+        ];
+    }
+
     $options = [
         'editmode' => false,
         'mapid' => 'auto_' . $cm->instance,
@@ -425,7 +448,7 @@ function learningmap_build_auto_placestore(cm_info $cm): array {
         'startingplaces' => $startingplaces,
         'targetplaces' => $targetplaces,
         'hidepaths' => 0,
-        'showall' => 0,
+        'showall' => 1,
         'showtext' => 1,
         'hover' => 0,
         'pulse' => 0,
